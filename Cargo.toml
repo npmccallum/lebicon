@@ -1,0 +1,13 @@
+[package]
+name = "leben"
+version = "0.1.0"
+authors = ["Nathaniel McCallum <npmccallum@redhat.com>"]
+keywords = ["LEB128", "DWARF", "WebAssembly", "wasm", "webasm"]
+repository = "https://github.com/npmccallum/leben"
+description = "LEB128 Encoder / Decoder"
+documentation = "https://docs.rs/leben"
+license = "Apache-2.0"
+readme = "README.md"
+
+[dev-dependencies]
+leb128 = "0.2.1"
