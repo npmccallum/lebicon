@@ -1,13 +1,18 @@
 [package]
-name = "leben"
-version = "0.1.0"
+name = "lebicon"
+version = "1.0.0"
 authors = ["Nathaniel McCallum <npmccallum@redhat.com>"]
 keywords = ["LEB128", "DWARF", "WebAssembly", "wasm", "webasm"]
-repository = "https://github.com/npmccallum/leben"
-description = "LEB128 Encoder / Decoder"
-documentation = "https://docs.rs/leben"
+repository = "https://github.com/npmccallum/lebicon"
+description = "Implements codicon traits for LEB128 encoding / decoding"
+documentation = "https://docs.rs/lebicon"
 license = "Apache-2.0"
 readme = "README.md"
+
+[dependencies]
+codicon = "1.0.0"
+signrel = "1.0.0"
+uabs = "1.0.0"
 
 [dev-dependencies]
 leb128 = "0.2.1"

@@ -16,43 +16,32 @@
 // limitations under the License.
 //
 
-//! Leben is a crate for encoding or decoding integers in LEB128 format.
-//!
-//! This is accomplished by extending the Rust native integer types with two traits:
-//!   * `Reader` (one associated function: `leb128_read`)
-//!   * `Writer` (one method: `leb128_write`)
+//! Lebicon implements the `codicon` traits for LEB128 encoding / decoding.
 //!
 //! # Examples
 //!
-//! Reading and writing is done on any value that implements the `std::io::Read` or
-//! `std::io::Write`, respectively. For example, we can write to `std::io::Sink`:
+//! ```rust
+//! extern crate codicon;
+//! extern crate lebicon;
 //!
-//! ```
-//! use std::io::sink;
-//! use leben::Writer;
-//!
-//! let mut writer = sink();
-//! let number: i16 = -582;
-//! number.leb128_write(&mut writer).unwrap();
-//! ```
-//!
-//! Don't forget that `std::vec::Vec<u8>` implements `std::io::Write` and `[u8]` implements
-//! `std::io::Read`:
-//!
-//! ```
-//! use leben::{Reader, Writer};
+//! use codicon::{Decoder, Encoder};
+//! use lebicon::Leb128;
 //! use std::io::Write;
 //!
 //! let encoded = [198, 253, 255, 127];
 //! let decoded = 268435142u64;
 //!
-//! let value = u64::leb128_read(&mut &encoded[..]).unwrap();
+//! let value = u64::decode(&mut &encoded[..], Leb128).unwrap();
 //! assert_eq!(value, decoded);
 //!
 //! let mut value: Vec<u8> = Vec::new();
-//! decoded.leb128_write(&mut value).unwrap();
+//! decoded.encode(&mut value, Leb128).unwrap();
 //! assert_eq!(&value[..], &encoded[..]);
 //! ```
+
+extern crate codicon;
+extern crate signrel;
+extern crate uabs;
 
 #[cfg(test)]
 extern crate leb128;
@@ -60,10 +49,133 @@ extern crate leb128;
 #[cfg(test)]
 mod tests;
 
-mod reader;
-mod writer;
-mod error;
+use uabs::UnsignedAbs;
+use signrel::SignRel;
+use std::cmp::min;
+use std::slice;
+use std::error;
+use std::fmt;
+use std::mem;
+use std::io;
 
-pub use reader::Reader;
-pub use writer::Writer;
-pub use error::Error;
+pub struct Leb128;
+
+/// The errors possibly returned when reading a LEB128-encoded integer.
+#[derive(Debug)]
+pub enum Error {
+    /// A propagated error from the `std::io::Read` implementation.
+    IoError(io::Error),
+
+    /// The LEB128-encoded integer is too large to fit in this integer type.
+    Overflow
+}
+
+impl error::Error for Error {}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Error::IoError(ref e) => e.fmt(f),
+            Error::Overflow => write!(f, "LEB128 integer overflow"),
+        }
+    }
+}
+
+impl From<io::Error> for Error {
+    fn from(e: io::Error) -> Self {
+        Error::IoError(e)
+    }
+}
+
+trait WriteByte: io::Write {
+    fn write_byte(&mut self, byte: u8) -> io::Result<()> {
+        self.write_all(slice::from_ref(&byte))?;
+        Ok(())
+    }
+}
+
+trait ReadByte: io::Read {
+    fn read_byte(&mut self) -> io::Result<u8> {
+        let mut byte = 0u8;
+        self.read_exact(slice::from_mut(&mut byte))?;
+        Ok(byte)
+    }
+}
+
+trait ByteMax: SignRel {
+    const MAX: Self::Unsigned;
+}
+
+const CONT: u8 = 0b10000000;
+
+impl<T: io::Write> WriteByte for T {}
+impl<T: io::Read> ReadByte for T {}
+
+macro_rules! leb_impl {
+    ($($s:ident:$u:ident)*) => (
+        $(
+            impl ByteMax for $s {
+                const MAX: Self::Unsigned = 0b00111111;
+            }
+
+            impl ByteMax for $u {
+                const MAX: Self::Unsigned = 0b01111111;
+            }
+
+            leb_impl! { $s }
+            leb_impl! { $u }
+        )*
+    );
+
+    ($t:ident) => (
+        impl codicon::Decoder<Leb128, Error> for $t {
+            fn decode<R: io::Read>(reader: &mut R, _: Leb128) -> Result<Self, Error> {
+                const BITS: u32 = mem::size_of::<$t>() as u32 * 8;
+                let mut value = <Self as SignRel>::Unsigned::from(0u8);
+                let mut shift = 0u32;
+                let mut byte = CONT;
+
+                while byte & CONT == CONT {
+                    if shift > BITS {
+                        return Err(Error::Overflow);
+                    }
+
+                    byte = reader.read_byte()?;
+
+                    let low = <Self as SignRel>::Unsigned::from(byte & !CONT);
+                    value |= low << shift;
+                    shift += 7;
+                }
+
+                if shift > BITS {
+                    // Ensure that none of the overflowed bits matter.
+                    let offs = 1 - (Self::MAX >> 6);
+                    let mask = 0b11111111 << 7 - (shift - BITS) >> offs;
+                    if byte & mask != mask && byte & mask != 0 {
+                        return Err(Error::Overflow);
+                    }
+                }
+
+                // Convert to signed and sign extend.
+                let off = BITS - min(shift, BITS);
+                value <<= off;
+                Ok(value as Self >> off)
+            }
+        }
+
+        impl codicon::Encoder<Leb128, Error> for $t {
+            fn encode<W: io::Write>(&self, writer: &mut W, _: Leb128) -> Result<(), Error> {
+                let mut value = *self;
+
+                while value.uabs() > Self::MAX {
+                    writer.write_byte(value as u8 | CONT)?;
+                    value >>= 7;
+                }
+
+                Ok(writer.write_byte(value as u8 & !CONT)?)
+            }
+        }
+    );
+}
+
+leb_impl! { isize:usize i128:u128 i64:u64 i32:u32 i16:u16 i8:u8 }

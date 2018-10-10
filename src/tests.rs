@@ -16,6 +16,7 @@
 // limitations under the License.
 //
 
+use codicon::{Encoder, Decoder};
 use super::*;
 
 const UVALS: &[u64] = &[
@@ -38,25 +39,25 @@ const UVALS: &[u64] = &[
 ];
 
 #[test]
-fn u64_read_leb128() {
+fn u64_decode_leb128() {
     use leb128;
 
     for i in UVALS {
         let mut b = Vec::new();
         let n = leb128::write::unsigned(&mut b, *i).unwrap();
         eprintln!("{:20}: {:?}", *i, b);
-        let v = u64::leb128_read(&mut &b[..n]).unwrap();
+        let v = u64::decode(&mut &b[..n], Leb128).unwrap();
         assert_eq!(v, *i);
     }
 }
 
 #[test]
-fn u64_write_leb128() {
+fn u64_encode_leb128() {
     use leb128;
 
     for i in UVALS {
         let mut b = Vec::new();
-        i.leb128_write(&mut b).unwrap();
+        i.encode(&mut b, Leb128).unwrap();
         eprintln!("{:20}: {:?}", *i, b);
         let v = leb128::read::unsigned(&mut &b[..]).unwrap();
         assert_eq!(v, *i);
@@ -98,25 +99,25 @@ const SVALS: &[i64] = &[
 ];
 
 #[test]
-fn i64_read_leb128_i64() {
+fn i64_decode_leb128_i64() {
     use leb128;
 
     for i in SVALS {
         let mut b = Vec::new();
         let n = leb128::write::signed(&mut b, *i).unwrap();
         eprintln!("{:20}: {:?}", *i, b);
-        let v = i64::leb128_read(&mut &b[..n]).unwrap();
+        let v = i64::decode(&mut &b[..n], Leb128).unwrap();
         assert_eq!(v, *i);
     }
 }
 
 #[test]
-fn i64_write_leb128() {
+fn i64_encode_leb128() {
     use leb128;
 
     for i in SVALS {
         let mut b = Vec::new();
-        i.leb128_write(&mut b).unwrap();
+        i.encode(&mut b, Leb128).unwrap();
         eprintln!("{:20}: {:?}", *i, b);
         let v = leb128::read::signed(&mut &b[..]).unwrap();
         assert_eq!(v, *i);
@@ -134,17 +135,19 @@ const UDWARF: &'static [(u16, &'static [u8])] = &[
 ];
 
 #[test]
-fn u16_read_dwarf() {
+fn u16_decode_dwarf() {
     for (i, b) in UDWARF {
-        assert_eq!(u16::leb128_read(&mut &**b).unwrap(), *i);
+        eprintln!("{:20}: {:?}", *i, *b);
+        assert_eq!(u16::decode(&mut &**b, Leb128).unwrap(), *i);
     }
 }
 
 #[test]
-fn u16_write_dwarf() {
+fn u16_encode_dwarf() {
     for (i, b) in UDWARF {
         let mut v = Vec::new();
-        i.leb128_write(&mut v).unwrap();
+        i.encode(&mut v, Leb128).unwrap();
+        eprintln!("{:20}: {:?}", *i, *b);
         assert_eq!(&v[..], *b);
     }
 }
@@ -162,23 +165,25 @@ const SDWARF: &'static [(i16, &'static [u8])] = &[
 ];
 
 #[test]
-fn i16_read_dwarf() {
+fn i16_decode_dwarf() {
     for (i, b) in SDWARF {
-        assert_eq!(i16::leb128_read(&mut &**b).unwrap(), *i);
+        eprintln!("{:20}: {:?}", *i, *b);
+        assert_eq!(i16::decode(&mut &**b, Leb128).unwrap(), *i);
     }
 }
 
 #[test]
-fn i16_write_dwarf() {
+fn i16_encode_dwarf() {
     for (i, b) in SDWARF {
         let mut v = Vec::new();
-        i.leb128_write(&mut v).unwrap();
+        i.encode(&mut v, Leb128).unwrap();
+        eprintln!("{:20b}: {:?}", *i, *b);
         assert_eq!(&v[..], *b);
     }
 }
 
-fn overflow<T: Reader>(buf: &[u8]) {
-    match T::leb128_read(&mut &buf[..]) {
+fn overflow<T: Decoder<Leb128, Error>>(buf: &[u8]) {
+    match T::decode(&mut &buf[..], Leb128) {
         Ok(_) => panic!("Unexpected success!"),
         Err(e) => match e {
             Error::Overflow => (),
