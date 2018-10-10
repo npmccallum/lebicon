@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/npmccallum/lebicon.svg?branch=master)](https://travis-ci.org/npmccallum/lebicon)
+[![Build Status](https://travis-ci.org/psilocybin/lebicon.svg?branch=master)](https://travis-ci.org/psilocybin/lebicon)
 ![Rust Version 1.28+](https://img.shields.io/badge/rustc-v1.28%2B-blue.svg)
 [![Crate](https://img.shields.io/crates/v/lebicon.svg)](https://crates.io/crates/lebicon)
 [![Docs](https://docs.rs/lebicon/badge.svg)](https://docs.rs/lebicon)
