@@ -1,6 +1,6 @@
 [package]
 name = "lebicon"
-version = "1.0.0"
+version = "2.0.0"
 authors = ["Nathaniel McCallum <npmccallum@redhat.com>"]
 keywords = ["LEB128", "DWARF", "WebAssembly", "wasm", "webasm"]
 repository = "https://github.com/npmccallum/lebicon"
