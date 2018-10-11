@@ -163,8 +163,8 @@ macro_rules! leb_impl {
             }
         }
 
-        impl codicon::Encoder<Leb128, Error> for $t {
-            fn encode<W: io::Write>(&self, writer: &mut W, _: Leb128) -> Result<(), Error> {
+        impl codicon::Encoder<Leb128, io::Error> for $t {
+            fn encode<W: io::Write>(&self, writer: &mut W, _: Leb128) -> Result<(), io::Error> {
                 let mut value = *self;
 
                 while value.uabs() > Self::MAX {
