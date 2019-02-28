@@ -182,7 +182,7 @@ fn i16_encode_dwarf() {
     }
 }
 
-fn overflow<T: Decoder<Leb128, Error>>(buf: &[u8]) {
+fn overflow<T: Decoder<Leb128, Error=Error>>(buf: &[u8]) {
     match T::decode(&mut &buf[..], Leb128) {
         Ok(_) => panic!("Unexpected success!"),
         Err(e) => match e {

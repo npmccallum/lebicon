@@ -128,8 +128,9 @@ macro_rules! leb_impl {
     );
 
     ($t:ident) => (
-        impl codicon::Decoder<Leb128, Error> for $t {
-            fn decode<R: io::Read>(reader: &mut R, _: Leb128) -> Result<Self, Error> {
+        impl codicon::Decoder<Leb128> for $t {
+            type Error = Error;
+            fn decode(reader: &mut impl io::Read, _: Leb128) -> Result<Self, Error> {
                 const BITS: u32 = mem::size_of::<$t>() as u32 * 8;
                 let mut value = <Self as SignRel>::Unsigned::from(0u8);
                 let mut shift = 0u32;
@@ -163,8 +164,9 @@ macro_rules! leb_impl {
             }
         }
 
-        impl codicon::Encoder<Leb128, io::Error> for $t {
-            fn encode<W: io::Write>(&self, writer: &mut W, _: Leb128) -> Result<(), io::Error> {
+        impl codicon::Encoder<Leb128> for $t {
+            type Error = io::Error;
+            fn encode(&self, writer: &mut impl io::Write, _: Leb128) -> Result<(), io::Error> {
                 let mut value = *self;
 
                 while value.uabs() > Self::MAX {
