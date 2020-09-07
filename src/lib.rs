@@ -103,7 +103,7 @@ trait ReadByte: io::Read {
 }
 
 trait ByteMax: SignRel {
-    const MAX: Self::Unsigned;
+    const BYTE_MAX: Self::Unsigned;
 }
 
 const CONT: u8 = 0b10000000;
@@ -115,11 +115,11 @@ macro_rules! leb_impl {
     ($($s:ident:$u:ident)*) => (
         $(
             impl ByteMax for $s {
-                const MAX: Self::Unsigned = 0b00111111;
+                const BYTE_MAX: Self::Unsigned = 0b00111111;
             }
 
             impl ByteMax for $u {
-                const MAX: Self::Unsigned = 0b01111111;
+                const BYTE_MAX: Self::Unsigned = 0b01111111;
             }
 
             leb_impl! { $s }
@@ -150,7 +150,7 @@ macro_rules! leb_impl {
 
                 if shift > BITS {
                     // Ensure that none of the overflowed bits matter.
-                    let offs = 1 - (Self::MAX >> 6);
+                    let offs = 1 - (Self::BYTE_MAX >> 6);
                     let mask = 0b11111111 << 7 - (shift - BITS) >> offs;
                     if byte & mask != mask && byte & mask != 0 {
                         return Err(Error::Overflow);
@@ -169,7 +169,7 @@ macro_rules! leb_impl {
             fn encode(&self, writer: &mut impl io::Write, _: Leb128) -> Result<(), io::Error> {
                 let mut value = *self;
 
-                while value.uabs() > Self::MAX {
+                while value.uabs() > Self::BYTE_MAX {
                     writer.write_byte(value as u8 | CONT)?;
                     value >>= 7;
                 }
