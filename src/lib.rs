@@ -87,29 +87,11 @@ impl From<io::Error> for Error {
     }
 }
 
-trait WriteByte: io::Write {
-    fn write_byte(&mut self, byte: u8) -> io::Result<()> {
-        self.write_all(slice::from_ref(&byte))?;
-        Ok(())
-    }
-}
-
-trait ReadByte: io::Read {
-    fn read_byte(&mut self) -> io::Result<u8> {
-        let mut byte = 0u8;
-        self.read_exact(slice::from_mut(&mut byte))?;
-        Ok(byte)
-    }
-}
-
 trait ByteMax: SignRel {
     const BYTE_MAX: Self::Unsigned;
 }
 
 const CONT: u8 = 0b10000000;
-
-impl<T: io::Write> WriteByte for T {}
-impl<T: io::Read> ReadByte for T {}
 
 macro_rules! leb_impl {
     ($($s:ident:$u:ident)*) => (
@@ -141,7 +123,9 @@ macro_rules! leb_impl {
                         return Err(Error::Overflow);
                     }
 
-                    byte = reader.read_byte()?;
+                    let mut bytes = [0u8; 1];
+                    reader.read_exact(&mut bytes)?;
+                    byte = bytes[0];
 
                     let low = <Self as SignRel>::Unsigned::from(byte & !CONT);
                     value |= low << shift;
@@ -170,11 +154,11 @@ macro_rules! leb_impl {
                 let mut value = *self;
 
                 while value.uabs() > Self::BYTE_MAX {
-                    writer.write_byte(value as u8 | CONT)?;
+                    writer.write_all(&[value as u8 | CONT])?;
                     value >>= 7;
                 }
 
-                Ok(writer.write_byte(value as u8 & !CONT)?)
+                Ok(writer.write_all(&[value as u8 & !CONT])?)
             }
         }
     );
