@@ -19,9 +19,6 @@
 //! assert_eq!(&value[..], &encoded[..]);
 //! ```
 
-#[cfg(test)]
-mod tests;
-
 use codicon::*;
 use signrel::SignRel;
 use uabs::Uabs;

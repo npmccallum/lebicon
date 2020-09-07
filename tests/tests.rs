@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use super::*;
 use codicon::{Decoder, Encoder};
+use lebicon::{Error, Leb128};
 
 const UVALS: &[u64] = &[
     0,
