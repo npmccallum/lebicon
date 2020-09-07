@@ -49,14 +49,14 @@ extern crate leb128;
 #[cfg(test)]
 mod tests;
 
-use uabs::UnsignedAbs;
 use signrel::SignRel;
 use std::cmp::min;
-use std::slice;
 use std::error;
 use std::fmt;
-use std::mem;
 use std::io;
+use std::mem;
+use std::slice;
+use uabs::UnsignedAbs;
 
 pub struct Leb128;
 
@@ -67,7 +67,7 @@ pub enum Error {
     IoError(io::Error),
 
     /// The LEB128-encoded integer is too large to fit in this integer type.
-    Overflow
+    Overflow,
 }
 
 impl error::Error for Error {}
