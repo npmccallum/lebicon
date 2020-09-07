@@ -21,9 +21,6 @@
 //! # Examples
 //!
 //! ```rust
-//! extern crate codicon;
-//! extern crate lebicon;
-//!
 //! use codicon::{Decoder, Encoder};
 //! use lebicon::Leb128;
 //! use std::io::Write;
@@ -38,13 +35,6 @@
 //! decoded.encode(&mut value, Leb128).unwrap();
 //! assert_eq!(&value[..], &encoded[..]);
 //! ```
-
-extern crate codicon;
-extern crate signrel;
-extern crate uabs;
-
-#[cfg(test)]
-extern crate leb128;
 
 #[cfg(test)]
 mod tests;

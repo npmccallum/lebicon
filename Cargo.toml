@@ -8,6 +8,7 @@ description = "Implements codicon traits for LEB128 encoding / decoding"
 documentation = "https://docs.rs/lebicon"
 license = "Apache-2.0"
 readme = "README.md"
+edition = "2018"
 
 [dependencies]
 codicon = "2.0.0"
