@@ -5,9 +5,8 @@
 //! # Examples
 //!
 //! ```rust
-//! use codicon::{Decoder, Encoder};
+//! use codicon::*;
 //! use lebicon::Leb128;
-//! use std::io::Write;
 //!
 //! let encoded = [198, 253, 255, 127];
 //! let decoded = 268435142u64;
