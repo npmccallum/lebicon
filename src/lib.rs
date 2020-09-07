@@ -40,30 +40,26 @@
 mod tests;
 
 use signrel::SignRel;
-use std::cmp::min;
-use std::error;
-use std::fmt;
-use std::io;
-use std::mem;
-use std::slice;
-use uabs::UnsignedAbs;
 
 pub struct Leb128;
 
-/// The errors possibly returned when reading a LEB128-encoded integer.
 #[derive(Debug)]
 pub enum Error {
-    /// A propagated error from the `std::io::Read` implementation.
-    IoError(io::Error),
-
-    /// The LEB128-encoded integer is too large to fit in this integer type.
+    IoError(std::io::Error),
     Overflow,
 }
 
-impl error::Error for Error {}
+impl std::error::Error for Error {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Error::Overflow => None,
+            Error::IoError(e) => Some(e),
+        }
+    }
+}
 
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match *self {
             Error::IoError(ref e) => e.fmt(f),
             Error::Overflow => write!(f, "LEB128 integer overflow"),
@@ -71,8 +67,8 @@ impl fmt::Display for Error {
     }
 }
 
-impl From<io::Error> for Error {
-    fn from(e: io::Error) -> Self {
+impl From<std::io::Error> for Error {
+    fn from(e: std::io::Error) -> Self {
         Error::IoError(e)
     }
 }
@@ -102,8 +98,9 @@ macro_rules! leb_impl {
     ($t:ident) => (
         impl codicon::Decoder<Leb128> for $t {
             type Error = Error;
-            fn decode(reader: &mut impl io::Read, _: Leb128) -> Result<Self, Error> {
-                const BITS: u32 = mem::size_of::<$t>() as u32 * 8;
+
+            fn decode(reader: &mut impl std::io::Read, _: Leb128) -> Result<Self, Error> {
+                const BITS: u32 = std::mem::size_of::<$t>() as u32 * 8;
                 let mut value = <Self as SignRel>::Unsigned::from(0u8);
                 let mut shift = 0u32;
                 let mut byte = CONT;
@@ -132,15 +129,16 @@ macro_rules! leb_impl {
                 }
 
                 // Convert to signed and sign extend.
-                let off = BITS - min(shift, BITS);
+                let off = BITS - std::cmp::min(shift, BITS);
                 value <<= off;
                 Ok(value as Self >> off)
             }
         }
 
         impl codicon::Encoder<Leb128> for $t {
-            type Error = io::Error;
-            fn encode(&self, writer: &mut impl io::Write, _: Leb128) -> Result<(), io::Error> {
+            type Error = std::io::Error;
+
+            fn encode(&self, writer: &mut impl std::io::Write, _: Leb128) -> std::io::Result<()> {
                 let mut value = *self;
 
                 while value.uabs() > Self::BYTE_MAX {
