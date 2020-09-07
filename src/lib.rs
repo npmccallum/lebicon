@@ -22,7 +22,9 @@
 #[cfg(test)]
 mod tests;
 
+use codicon::*;
 use signrel::SignRel;
+use uabs::Uabs;
 
 pub struct Leb128;
 
@@ -79,10 +81,10 @@ macro_rules! leb_impl {
     );
 
     ($t:ident) => (
-        impl codicon::Decoder<Leb128> for $t {
+        impl Decoder<Leb128> for $t {
             type Error = Error;
 
-            fn decode(reader: &mut impl std::io::Read, _: Leb128) -> Result<Self, Error> {
+            fn decode(mut reader: impl Read, _: Leb128) -> Result<Self, Error> {
                 const BITS: u32 = std::mem::size_of::<$t>() as u32 * 8;
                 let mut value = <Self as SignRel>::Unsigned::from(0u8);
                 let mut shift = 0u32;
@@ -118,10 +120,10 @@ macro_rules! leb_impl {
             }
         }
 
-        impl codicon::Encoder<Leb128> for $t {
+        impl Encoder<Leb128> for $t {
             type Error = std::io::Error;
 
-            fn encode(&self, writer: &mut impl std::io::Write, _: Leb128) -> std::io::Result<()> {
+            fn encode(&self, mut writer: impl Write, _: Leb128) -> std::io::Result<()> {
                 let mut value = *self;
 
                 while value.uabs() > Self::BYTE_MAX {

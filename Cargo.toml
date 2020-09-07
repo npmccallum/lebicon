@@ -11,9 +11,9 @@ readme = "README.md"
 edition = "2018"
 
 [dependencies]
-codicon = "2.1"
+codicon = "3.0"
 signrel = "1.0"
-uabs = "1.0"
+uabs = "2.0"
 
 [dev-dependencies]
 leb128 = "0.2"
