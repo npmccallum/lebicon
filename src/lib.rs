@@ -19,15 +19,23 @@
 //! assert_eq!(&value[..], &encoded[..]);
 //! ```
 
+#![deny(clippy::all)]
+#![deny(missing_docs)]
+
 use codicon::*;
 use signrel::SignRel;
 use uabs::Uabs;
 
+/// A codec for LEB128 format
 pub struct Leb128;
 
+/// A LEB128 decoding error
 #[derive(Debug)]
 pub enum Error {
+    /// A propagated `std::io::Error`
     IoError(std::io::Error),
+
+    /// A LEB128 integer overflow error
     Overflow,
 }
 
